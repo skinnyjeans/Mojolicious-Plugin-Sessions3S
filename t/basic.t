@@ -9,6 +9,8 @@ use Mojolicious::Lite;
 
 plugin Sessions3S => {};
 
+app->sessions()->cookie_name( 'saussage' );
+
 get '/hello' => sub {
     my ($self) = @_;
     $self->session( said_hello => 'yup' );
@@ -23,10 +25,11 @@ get '/haveISaidHello' => sub{
 my $t = Test::Mojo->new();
 
 $t->get_ok('/haveISaidHello')->content_like( qr/nope/ );
+ok( ! $t->tx->res->every_cookie('saussage')->[0] , "Ok no cookie yet");
+
 $t->get_ok('/hello');
 
-# use DDP;
-# p $t->tx->res->headers;
+is( $t->tx->res->every_cookie('saussage')->[0]->name() , 'saussage' , "Cookie is set with the right name" );
 
 $t->get_ok('/haveISaidHello')->content_like( qr/yes/ );
 
