@@ -10,6 +10,17 @@ Mojolicious::Sessions::ThreeS::Storage::Memory - A simple in Memory storage for 
 
 my $_SESSION_STORE = {};
 
+=head2 list_sessions
+
+Returns the ArrayRef of sessions for introspection.
+
+=cut
+
+sub list_sessions{
+    my ($self) = @_;
+    return [ values %$_SESSION_STORE ];
+}
+
 =head2 get_session
 
 See L<Mojolicious::Sessions::ThreeS::Storage>

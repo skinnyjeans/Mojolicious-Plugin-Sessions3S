@@ -109,6 +109,19 @@ sub cookie_path{
     return $self->state->cookie_path( @rest );
 }
 
+=head2 secure
+
+From L<Mojolicious::Sessions>. Delegate to the underlying Cookie
+based state. Use this only if you know the state object supports cookies.
+
+=cut
+
+sub secure{
+    my ($self, @rest ) = @_;
+    unless( $self->was_set() ){ return $self->SUPER::secure( @rest ); }
+    return $self->state->secure( @rest );
+}
+
 =head2 load
 
 Implements load from L<Mojolicious::Sessions>
@@ -122,10 +135,14 @@ sub load{
 
     # Stuff was set, we need to use it.
     my $session_id = $self->state()->get_session_id( $controller );
-    unless( $session_id ){ return; }
+    unless( $session_id ){
+        return;
+    }
 
     my $session = $self->storage->get_session( $session_id );
-    unless( $session ){ return; }
+    unless( $session ){
+        return;
+    }
 
     # We just want to set the session in the stash, as required
     # by Mojolicious::Controller::session
@@ -140,13 +157,13 @@ sub load{
     if( $expiration &&
             ! $expires ){
         # No expiry time, but there should be one. Delete the session_id and return
-        warn "DELETING SESSION";
         $self->storage()->remove_session_id( $session_id );
+        return;
     }
     if( defined $expires && $expires <= time() ){
         # Session as expired.
-        warn "SESSION HAS EXPIRED";
         $self->storage()->remove_session_id( $session_id );
+        return;
     }
 
     # If the session is empty, we dont want it to be marked active.

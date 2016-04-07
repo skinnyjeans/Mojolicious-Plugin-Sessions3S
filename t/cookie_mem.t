@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 
+use Test::MockTime qw//;
 use Test::More;
 use Test::Mojo;
 
@@ -15,30 +16,94 @@ plugin Sessions3S => { storage => Mojolicious::Sessions::ThreeS::Storage::Memory
                    };
 
 app->sessions()->cookie_name( 'saussage' );
+app->sessions()->cookie_path('/cook');
 
-get '/hello' => sub {
+get '/cook/hello' => sub {
     my ($self) = @_;
     $self->session( said_hello => 'yup' );
     $self->render( text => 'saying hello' );
 };
 
-get '/haveISaidHello' => sub{
+get '/cook/expire' => sub{
+    my ($self) = @_;
+    $self->session( expires => 1 );
+    $self->render( text => 'expiring session' );
+};
+
+get '/cook/haveISaidHello' => sub{
+    my ($self) = @_;
+    $self->render( text => $self->session('said_hello') ? 'yes' : 'nope' );
+};
+
+get '/stateless' => sub{
     my ($self) = @_;
     $self->render( text => $self->session('said_hello') ? 'yes' : 'nope' );
 };
 
 my $t = Test::Mojo->new();
 
-$t->get_ok('/haveISaidHello')->content_like( qr/nope/ );
-ok( ! $t->tx->res->every_cookie('saussage')->[0] , "Ok no cookie yet");
+{
+    # No cookie state first
+    $t->get_ok('/cook/haveISaidHello')->content_like( qr/nope/ );
+    ok( ! $t->tx->res->every_cookie('saussage')->[0] , "Ok no cookie yet");
+}
 
-$t->get_ok('/hello');
+my $session_cookie;
+{
+    # This will actually set the cookie
+    $t->get_ok('/cook/hello');
 
-# use DDP;
-# p $t->tx->res->headers();
+    ok( $session_cookie = $t->tx->res->every_cookie('saussage')->[0] , "Ok can find the session cookie");
+    is( $session_cookie->name() , 'saussage' , "Cookie is set with the right name" );
+    is( $session_cookie->path() , '/cook');
+    cmp_ok( $session_cookie->expires() , '>', time() );
+    cmp_ok( $session_cookie->expires() , '<=', time() + app->sessions()->default_expiration()  );
+}
 
-is( $t->tx->res->every_cookie('saussage')->[0]->name() , 'saussage' , "Cookie is set with the right name" );
+{
+    # The cookie state is preseved
+    $t->get_ok('/cook/haveISaidHello')->content_like( qr/yes/ );
+}
+{
+    # But not accessible to whatever is not under the right path
+    $t->get_ok('/stateless')->content_like( qr/nope/ );
+}
 
-$t->get_ok('/haveISaidHello')->content_like( qr/yes/ );
+{
+    # Accessible again
+    $t->get_ok('/cook/haveISaidHello')->content_like( qr/yes/ );
+    # But we will expire the session
+    $t->get_ok('/cook/expire')->content_like( qr/expiring/ );
+
+}
+{
+    # The session has now expired and this says no
+    $t->get_ok('/cook/haveISaidHello')->content_like( qr/nope/ );
+    # This is NOT true, because the cookie was not even send.
+    # ok( ! @{app->sessions()->storage()->list_sessions()} , "Ok no sessions left in storage");
+    # And no cookie was set in the response.
+    ok( ! $t->tx->res->every_cookie('saussage')->[0] , "Ok no cookie yet");
+}
+
+{
+    # Now say hello again
+    $t->get_ok('/cook/hello');
+    ok( $session_cookie = $t->tx->res->every_cookie('saussage')->[0] , "Ok can find the session cookie");
+    my $first_time = $session_cookie->expires();
+    # Jump two seconds in the future
+    Test::MockTime::set_relative_time( 2 );
+    # And the state is back!
+    $t->get_ok('/cook/haveISaidHello')->content_like( qr/yes/ );
+    $session_cookie = $t->tx->res->every_cookie('saussage')->[0];
+    cmp_ok( $session_cookie->expires() , '>', $first_time , "The cookie expiration times has been bumped up");
+    Test::MockTime::restore_time();
+}
+
+{
+    # Jump to a time later than the session expire and check its no longer there.
+    Test::MockTime::set_absolute_time( $session_cookie->expires() + 1 );
+    $t->get_ok('/cook/haveISaidHello')->content_like( qr/nope/ );
+    Test::MockTime::restore_time();
+}
 
 done_testing();
