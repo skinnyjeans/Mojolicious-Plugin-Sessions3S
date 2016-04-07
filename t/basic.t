@@ -11,6 +11,10 @@ plugin Sessions3S => {};
 
 app->sessions()->cookie_name( 'saussage' );
 
+ok( app->sessions()->state() );
+ok( app->sessions()->sidgen() );
+ok( ! app->sessions()->storage() );
+
 get '/hello' => sub {
     my ($self) = @_;
     $self->session( said_hello => 'yup' );

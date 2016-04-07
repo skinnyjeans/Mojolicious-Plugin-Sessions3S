@@ -35,7 +35,7 @@ Or as a plugin, with exactly the same arguments. See L<Mojolicious::Plugin::Sess
 
 has 'storage';
 has 'state' => sub{
-    return Mojolicious::Plugin::Sessions3S::State::Cookie->new();
+    return Mojolicious::Sessions::ThreeS::State::Cookie->new();
 };
 has 'sidgen' => sub{
     return Mojolicious::Sessions::ThreeS::SidGen::Simple->new();
