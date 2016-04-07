@@ -236,7 +236,7 @@ sub store{
         # Mojo is serving a static resource (like a file).
         # This is marked with mojo.static being set on the stash.
         # Behave as if a new_flash was set against the session
-        $session->{new_flash} = $old_flash;
+        $session->{new_flash} = \%{ $old_flash };
     }
 
     # Clear the new_flash if it contains nothing
