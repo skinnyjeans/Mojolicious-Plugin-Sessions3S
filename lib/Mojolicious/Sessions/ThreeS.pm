@@ -6,6 +6,7 @@ use warnings;
 use Carp;
 use Mojo::Base 'Mojolicious::Sessions';
 
+use Mojolicious::Sessions::ThreeS::State::Cookie;
 use Mojolicious::Sessions::ThreeS::SidGen::Simple;
 
 =head1 NAME
@@ -24,7 +25,7 @@ You can use this directly when you build your mojolicious App:
  sub startup{
    my ($app) = @_;
    ...
-   $app->sessions( Mojolicious::Sessions:ThreeS->new(...) );
+   $app->sessions( Mojolicious::Sessions:ThreeS->new({ storage => ... , state => ... , sidgen => ... } ) );
    ...
  }
 
@@ -33,14 +34,36 @@ Or as a plugin, with exactly the same arguments. See L<Mojolicious::Plugin::Sess
 =cut
 
 has 'storage';
-has 'state';
+has 'state' => sub{
+    return Mojolicious::Plugin::Sessions3S::State::Cookie->new();
+};
 has 'sidgen' => sub{
     return Mojolicious::Sessions::ThreeS::SidGen::Simple->new();
 };
 
 =head2 new
 
-Builds an instance of this.
+Builds an instance of this given the following properties (all optional):
+
+=over
+
+=item storage
+
+An instance of a subclass of L<Mojolicious::Sessions::ThreeS::Storage>. Defaults to C<undef>
+
+When not given, this will consider itself inactive and fallback to the default L<Mojolicious::Sessions> behaviour.
+
+=item state
+
+An instance of a subclass of L<Mojolicious::Sessions::ThreeS::State>. Defaults to
+an instance of L<Mojolicious::Sessions::ThreeS::State::Cookie>.
+
+=item sidgen
+
+An Session ID generator, instance of L<Mojolicious::Sessions::ThreeS::SidGen>. Defaults
+to an instance of L<Mojolicious::Sessions::ThreeS::SidGen::Simple>.
+
+=back
 
 =cut
 
