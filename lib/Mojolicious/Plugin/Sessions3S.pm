@@ -5,6 +5,26 @@ package Mojolicious::Plugin::Sessions3S;
 
 Mojolicious::Plugin::Sessions3S - Manage mojolicious sessions Storage, State and SID generation
 
+=head1 DESCRIPTION
+
+This plugins puts you in control of how your sessions are stored, how the state persists
+in the client browser and how session Ids are generated.
+
+It provides a drop in replacement for the standard Mojolicious::Sessions mechanism and
+will NOT require any change of your application code (except the setup of course).
+
+=head1 SYNOPSIS
+
+  $app->plugin( 'Sessions3S' => {
+     state => ..,
+     storage => ...,
+     sidgen => ...
+  });
+
+See L<Mojolicious::Sessions::ThreeS> for the parameters description.
+
+If no arguments are provided, this fallsback to the stock L<Mojolicious::Sessions> behaviour.
+
 =cut
 
 use strict;
@@ -29,5 +49,12 @@ sub register{
     $app->sessions( $sessions_manager );
 }
 
+=head1 COPYRIGHT
+
+This is copyright Jerome Eteve (JETEVE) 2016
+
+With the support of Broadbean UK Ltd. L<http://www.broadbean.co.uk>
+
+=cut
 
 1;
