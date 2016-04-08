@@ -22,6 +22,16 @@ See [Mojolicious::Sessions::ThreeS](https://metacpan.org/pod/Mojolicious::Sessio
 
 If no arguments are provided, this fallsback to the stock [Mojolicious::Sessions](https://metacpan.org/pod/Mojolicious::Sessions) behaviour.
 
+You can then use [Mojolicious::Controller](https://metacpan.org/pod/Mojolicious::Controller) session related methods (`session`, `flash`) as usual.
+
+With the addition of the following methods (helpers):
+
+## session\_id
+
+Always returns the ID of the current session:
+
+    my $session_id = $c->session_id();
+
 ## register
 
 Implementation for [Mojolicious::Plugin](https://metacpan.org/pod/Mojolicious::Plugin) base class
