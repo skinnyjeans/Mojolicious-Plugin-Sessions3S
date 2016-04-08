@@ -34,6 +34,7 @@ foreach my $storage ( @storages ){
         my ($self) = @_;
         $self->session( said_hello => 'yup' );
         $self->flash( 'flashy' => 'flashy' );
+        $self->res->headers()->add( 'X-MySid' , $self->session_id() );
         $self->render( text => 'saying hello' );
     };
 
@@ -66,9 +67,12 @@ foreach my $storage ( @storages ){
         # This will actually set the cookie
         $t->get_ok('/cook/hello');
 
+        ok( my $sid = $t->tx->res->headers()->header('X-MySid') , "Ok got my session ID in header");
         ok( $session_cookie = $t->tx->res->every_cookie('saussage')->[0] , "Ok can find the session cookie");
         is( $session_cookie->name() , 'saussage' , "Cookie is set with the right name" );
         is( $session_cookie->path() , '/cook');
+        # The cookie value and the My-Sid are actually the same
+        like( $session_cookie->value() , qr/^$sid/ );
         cmp_ok( $session_cookie->expires() , '>', time() );
         cmp_ok( $session_cookie->expires() , '<=', time() + app->sessions()->default_expiration()  );
     }

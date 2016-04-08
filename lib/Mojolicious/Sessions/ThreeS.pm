@@ -244,7 +244,7 @@ sub store{
         delete $session->{new_flash};
     }
 
-    my $session_id = $session->{'mojox.sessions3s.id'} ||= $self->sidgen()->generate_sid( $controller );
+    my $session_id = $self->get_session_id( $session ,  $controller );
 
     if( defined( $session->{'mojox.sessions3s.old_id'} ) ){
         # Session id has changed. Clear the old one.
@@ -265,6 +265,23 @@ sub store{
     # And then inject the session id as a client state.
     $self->state->set_session_id( $controller , $session_id , { expires => $session->{expires} } );
 }
+
+=head2 get_session_id
+
+Get the current session ID or generate a fresh one and store it in the given session object,
+using the given controller.
+
+Usage:
+
+ my $session_id = $this->session_id( $session, $controller );
+
+=cut
+
+sub get_session_id{
+    my ($self, $session, $controller ) = @_;
+    return $session->{'mojox.sessions3s.id'} ||= $self->sidgen()->generate_sid( $controller );
+}
+
 
 1;
 

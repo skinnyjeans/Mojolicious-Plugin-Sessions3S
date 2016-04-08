@@ -25,6 +25,16 @@ See L<Mojolicious::Sessions::ThreeS> for the parameters description.
 
 If no arguments are provided, this fallsback to the stock L<Mojolicious::Sessions> behaviour.
 
+You can then use L<Mojolicious::Controller> session related methods (C<session>, C<flash>) as usual.
+
+With the addition of the following methods (helpers):
+
+=head2 session_id
+
+Always returns the ID of the current session:
+
+  my $session_id = $c->session_id();
+
 =cut
 
 use strict;
@@ -45,8 +55,16 @@ sub register{
     unless( ( ref($args) || '' ) eq 'HASH' ){
         confess("Argument to ".ref($self)." should be an HashRef");
     }
+
+    # Inject the session manager in the Mojo::App:
     my $sessions_manager = Mojolicious::Sessions::ThreeS->new( $args );
     $app->sessions( $sessions_manager );
+
+    # Install the helpers
+    $app->helper( session_id => sub{
+                      my ($c) = @_;
+                      return $sessions_manager->get_session_id( $c->session() , $c );
+                  } );
 }
 
 =head1 COPYRIGHT
