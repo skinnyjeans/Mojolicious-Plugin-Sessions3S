@@ -20,8 +20,18 @@ Note that you WILL have to depend on CHI and on JSON in your application to use 
 
 This distribution does not add these to the runtime dependencies to avoid clutter.
 
+=head1 ATTRIBUTES
+
+=head2 default_expiration
+
+Default expiration length (in seconds) in case you dont define a default session expiration
+at higher level. This is required to avoid CHI cache overflowing.
+
+Defaults to 43200 (12 hours).
+
 =cut
 
+has 'default_expiration' => 43200;
 has 'chi';
 has 'json' => sub{
     my $json = JSON->new();
@@ -30,6 +40,8 @@ has 'json' => sub{
     # of bad decoding.
     return $json;
 };
+
+=head1 METHODS
 
 =head2 get_session
 
@@ -54,12 +66,13 @@ sub store_session {
     my ( $self, $session_id, $session ) = @_;
     my $expires = $session->{expires};
     my $value   = $self->json()->encode($session);
+    unless( defined $expires ){
+        $expires = time() + $self->default_expiration();
+    }
     $self->chi->set(
         $session_id,
         $value,
-        (
-            $expires ? { expires_at => $expires, expires_variance => 0.15 } : ()
-        )
+        { expires_at => $expires, expires_variance => 0.15 }
     );
 }
 
